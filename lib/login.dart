@@ -1,9 +1,11 @@
 
 import 'package:easybillingnewapp1/home.dart';
+import 'package:easybillingnewapp1/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dart:convert';
 
@@ -17,10 +19,11 @@ class MyLogin extends StatefulWidget {
 }
 
 class _MyLoginState extends State<MyLogin> {
+  final _formkey=GlobalKey<FormState>();
   bool isChecked = false;
-  TextEditingController email = TextEditingController();
+  TextEditingController mobileNumber = TextEditingController();
   TextEditingController password = TextEditingController();
-
+  bool _validate = false;
 
   late Box box1;
 
@@ -37,18 +40,18 @@ class _MyLoginState extends State<MyLogin> {
     getdata();
   }
   void getdata()async {
-    if (box1.get('email') != null) {
-      email.text = box1.get('email');
+    if (box1.get('mobileNumber') != null) {
+      mobileNumber.text = box1.get('email');
       isChecked = true;
       setState(() {
-
+print("Please enter mobile number");
       });
     }
     if (box1.get('password') != null) {
       password.text = box1.get('password');
       isChecked = true;
       setState(() {
-
+        print("Please enter Password");
       });
     }
   }
@@ -87,13 +90,22 @@ class _MyLoginState extends State<MyLogin> {
                       margin: EdgeInsets.only(left: 35, right: 35),
                       child: Column(
                         children: [
-                          TextField(
-                            controller: email,
+                          TextFormField(
+                            controller: mobileNumber,
+                            validator: (mobileNumber) {
+                              if (mobileNumber == null || mobileNumber.isEmpty || mobileNumber.length !=10) {
+                                return 'Please enter a valid 10 digit mobile number';
+                              }
+                              // Add your custom validation logic here
+                              return null; // Return null for no validation error
+                            },
                             style: TextStyle(color: Colors.black),
                             decoration: InputDecoration(
                                 fillColor: Colors.grey.shade100,
                                 filled: true,
-                                hintText: "Email",
+
+
+                                hintText: "Mobile Number",
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 )),
@@ -101,12 +113,20 @@ class _MyLoginState extends State<MyLogin> {
                           SizedBox(
                             height: 30,
                           ),
-                          TextField(
+                          TextFormField(
                             controller: password,
+                            validator: (password) {
+                              if (password == null || password.isEmpty) {
+                                return 'Please enter password';
+                              }
+                              // Add your custom validation logic here
+                              return null; // Return null for no validation error
+                            },
                             style: TextStyle(),
                             obscureText: true,
                             decoration: InputDecoration(
                                 fillColor: Colors.grey.shade100,
+
                                 filled: true,
                                 hintText: "Password",
                                 border: OutlineInputBorder(
@@ -145,11 +165,18 @@ class _MyLoginState extends State<MyLogin> {
                                 backgroundColor: Color(0xff4c505b),
                                 child: IconButton(
                                     color: Colors.white,
-                                    onPressed: () {
-                                      Navigator.push(context, MaterialPageRoute(builder: (BuildContext context){
-                                        return home();
-                                      },),);
+                                    onPressed: ()
+                                    {
                                       login();
+ if (_formkey.currentState!.validate() == true){
+                                    login();
+                                        print("test");
+                                      }
+                                      else
+                                      {
+                                        print("test1");
+                                      }
+
                                     },
                                     icon: Icon(
                                       Icons.arrow_forward,
@@ -183,6 +210,7 @@ class _MyLoginState extends State<MyLogin> {
                                   onPressed: () {},
                                   child: Text(
                                     'Forgot Password',
+
                                     style: TextStyle(
                                       decoration: TextDecoration.underline,
                                       color: Color(0xff4c505b),
@@ -209,12 +237,12 @@ class _MyLoginState extends State<MyLogin> {
   void login() async {
 
     if (isChecked) {
-      box1.put('email', email.text);
+      box1.put('email', mobileNumber.text);
       box1.put('password', password.text);
     }
     var url = Uri.parse(baseURL+'api/users/login');
     var requestBody = {
-      "mobile_number": email.text,
+      "mobile_number": mobileNumber.text,
       "password": password.text,
     };
 
@@ -230,11 +258,10 @@ class _MyLoginState extends State<MyLogin> {
           .toString(); // Assuming the ID key in the response is 'id'
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.setString('id', id);
+      Navigator.push(context, MaterialPageRoute(builder: (BuildContext context){
+        return HomePage();
+      },),);
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => home()),
-      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -254,4 +281,5 @@ class _MyLoginState extends State<MyLogin> {
       print('Failed to add user. Error: ${response.statusCode}');
     }
   }
+
 }
